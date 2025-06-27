@@ -1,37 +1,39 @@
-import cv2
-import numpy as np
-import tkinter as tk
-from tkinter import messagebox, filedialog
-from statistics import mean, median, mode, StatisticsError
-from scipy.stats import skew
+import cv2  # OpenCV for displaying splash screen
+import numpy as np  # Used to create and manipulate image data as arrays
+import tkinter as tk  # GUI library for the main application interface
+from tkinter import messagebox, filedialog  # Additional Tkinter tools for dialogs
+from statistics import mean, median, mode, StatisticsError  # Built-in stats functions
+from scipy.stats import skew  # Calculates skewness (asymmetry in data)
 
-# Function to display an OpenCV splash screen
+# Function to display a welcome splash screen using OpenCV
 def show_splash_screen():
-    img = np.zeros((300, 600, 3), dtype=np.uint8)  # Create black image using numpy
+    img = np.zeros((300, 600, 3), dtype=np.uint8)  # Create a black image (300x600 pixels)
     cv2.putText(img, "Welcome to Marks Calculator", (40, 150),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)  # Green text on image
-    cv2.imshow("Loading", img)  # Display the image
+                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)  # Add green text to image
+    cv2.imshow("Loading", img)  # Display splash screen in a window
     cv2.waitKey(2000)  # Wait for 2 seconds
-    cv2.destroyAllWindows()  # Close the splash screen
+    cv2.destroyAllWindows()  # Close the splash screen window
 
-# Main GUI Application Class
+# Class that defines the GUI application
 class MarksApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Student Marks Calculator")
-        self.marks = []  # List of marks
+        self.root.title("Student Marks Calculator")  # Set the window title
+        self.marks = []  # List to hold all entered marks
 
-        # Entry for numbers
+        # Entry widget for user input
         self.entry = tk.Entry(root, width=40)
         self.entry.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
 
+        # Button to add one or multiple marks
         self.add_button = tk.Button(root, text="Add Mark(s)", command=self.add_marks)
         self.add_button.grid(row=0, column=2)
 
+        # Label that displays the current marks list
         self.list_label = tk.Label(root, text="Marks: []")
         self.list_label.grid(row=1, column=0, columnspan=3)
 
-        # Buttons
+        # Buttons for statistical operations
         self.mean_button = tk.Button(root, text="Mean", command=self.show_mean)
         self.median_button = tk.Button(root, text="Median", command=self.show_median)
         self.mode_button = tk.Button(root, text="Mode", command=self.show_mode)
@@ -42,53 +44,64 @@ class MarksApp:
         self.mode_button.grid(row=2, column=2, pady=5)
         self.skew_button.grid(row=3, column=0, pady=5)
 
+        # Button to load marks from file
         self.load_button = tk.Button(root, text="Load from File", command=self.load_from_file)
         self.load_button.grid(row=3, column=1)
 
+        # Button to save current marks and stats to a file
         self.save_button = tk.Button(root, text="Save to File", command=self.save_to_file)
         self.save_button.grid(row=3, column=2)
 
+        # Reset and Exit buttons
         self.reset_button = tk.Button(root, text="Reset All", command=self.reset)
         self.reset_button.grid(row=4, column=0)
 
         self.exit_button = tk.Button(root, text="Exit", command=root.quit)
         self.exit_button.grid(row=4, column=2, pady=10)
 
+    # Adds new marks from the entry field to the list
     def add_marks(self):
-        user_input = self.entry.get()  # Get input from the user
-
+        user_input = self.entry.get()  # Read the user input
         if not user_input:
             messagebox.showwarning("Input Error", "Please enter a number or numbers.")
             return
+
         try:
             if ',' in user_input:
+                # Split and process comma-separated values
                 values = user_input.split(',')
                 for v in values:
-                    self.marks.append(float(v.strip()))  # Add each number after conversion
+                    self.marks.append(float(v.strip()))
             else:
+                # Process a single value
                 self.marks.append(float(user_input.strip()))
 
+            # Update GUI label and clear entry box
             self.list_label.config(text=f"Marks: {self.marks}")
             self.entry.delete(0, tk.END)
         except ValueError:
             messagebox.showerror("Invalid Input", "Please enter valid number(s).")
 
+    # Checks if there are at least two valid marks
     def validate_marks(self):
         if len(self.marks) < 2:
             messagebox.showwarning("Insufficient Data", "Please enter at least two marks.")
             return False
         return True
 
+    # Displays the mean of the marks
     def show_mean(self):
         if self.validate_marks():
             m = mean(self.marks)
             messagebox.showinfo("Mean", f"Mean of marks is: {m:.2f}")
 
+    # Displays the median of the marks
     def show_median(self):
         if self.validate_marks():
             m = median(self.marks)
             messagebox.showinfo("Median", f"Median of marks is: {m:.2f}")
 
+    # Displays the mode of the marks
     def show_mode(self):
         if self.validate_marks():
             try:
@@ -97,22 +110,26 @@ class MarksApp:
             except StatisticsError:
                 messagebox.showinfo("Mode", "No unique mode found.")
 
+    # Displays the skewness of the marks
     def show_skewness(self):
         if self.validate_marks():
             sk = skew(self.marks)
             messagebox.showinfo("Skewness", f"Skewness is: {sk:.3f}")
 
+    # Resets the marks list and GUI label
     def reset(self):
         self.marks.clear()
         self.list_label.config(text="Marks: []")
         self.entry.delete(0, tk.END)
 
+    # Load marks from a text file (either comma or line separated)
     def load_from_file(self):
         filepath = filedialog.askopenfilename(title="Select File", filetypes=[("Text Files", "*.txt")])
         if filepath:
             try:
                 with open(filepath, 'r') as file:
                     content = file.read()
+                    # Support both comma-separated and line-separated formats
                     if ',' in content:
                         values = content.split(',')
                     else:
@@ -124,6 +141,7 @@ class MarksApp:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load file: {e}")
 
+    # Save marks and statistics to a user-specified file
     def save_to_file(self):
         if not self.marks:
             messagebox.showwarning("Save Error", "No marks to save.")
@@ -150,9 +168,9 @@ class MarksApp:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save file: {e}")
 
-# Start the GUI application with splash screen
+# Launch the application
 if __name__ == "__main__":
-    show_splash_screen()
-    root = tk.Tk()
-    app = MarksApp(root)
-    root.mainloop()
+    show_splash_screen()  # Show welcome splash before GUI
+    root = tk.Tk()  # Create the main window
+    app = MarksApp(root)  # Start the application
+    root.mainloop()  # Run the Tkinter event loop
